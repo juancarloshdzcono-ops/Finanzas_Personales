@@ -124,6 +124,11 @@
     background:transparent; color:var(--ink-dim); font-family:inherit; font-weight:600; font-size:13.5px; cursor:pointer;
   }
   .add-btn:hover{ border-color:var(--accent); color:var(--accent); }
+  .btn-solid{
+    width:100%; margin-top:10px; padding:12px; border-radius:14px; border:none;
+    background:var(--accent); color:var(--accent-ink); font-family:inherit; font-weight:700; font-size:13.5px; cursor:pointer;
+  }
+  .btn-solid:disabled{ opacity:.6; cursor:default; }
 
   .progress{ height:8px; border-radius:99px; background:var(--surface-2); overflow:hidden; margin:10px 0; }
   .progress > div{ height:100%; background:var(--good); border-radius:99px; transition:width .2s; }
@@ -147,7 +152,18 @@
 </style>
 </head>
 <body>
-<div class="phone">
+<div class="phone" id="gate" hidden>
+  <div class="topbar"><h1>Mis Quincenas</h1></div>
+  <div class="content" style="display:flex; flex-direction:column; justify-content:center; flex:1;">
+    <div class="card">
+      <label class="field">Tu correo</label>
+      <input type="email" id="gate-email" placeholder="tu@correo.com" style="margin-bottom:10px;">
+      <button class="btn-solid" id="gate-send">Enviarme el link</button>
+      <p class="helptext" id="gate-msg" style="margin-top:10px;">Sin contraseña — te mandamos un link para entrar.</p>
+    </div>
+  </div>
+</div>
+<div class="phone" id="app" hidden>
   <div class="topbar">
     <h1>Mis Quincenas</h1>
     <div class="period-switch">
@@ -156,7 +172,7 @@
       <button id="period-next" aria-label="Mes siguiente">›</button>
     </div>
   </div>
-  <div class="proto-note">Prototipo con datos de ejemplo para probar el concepto — no son tus cifras reales. Lo que agregues se guarda solo en este navegador.</div>
+  <div class="proto-note">Tus datos se guardan en tu cuenta y se sincronizan entre tus dispositivos.</div>
 
   <div class="content" id="view-resumen">
     <h2>Ingresos de la quincena</h2>
@@ -185,6 +201,11 @@
       <div class="stat" id="stat-sq1"><div class="k">1ra quincena</div><div class="v num" id="v-sq1"></div></div>
       <div class="stat" id="stat-sq2"><div class="k">2da quincena</div><div class="v num" id="v-sq2"></div></div>
     </div>
+
+    <p class="helptext" style="margin-top:16px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+      <span id="session-email"></span>
+      <button id="signout-btn" style="background:none; border:none; color:var(--warn); font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; padding:0;">Cerrar sesión</button>
+    </p>
   </div>
 
   <div class="content" id="view-conceptos" hidden>
@@ -257,8 +278,14 @@
   </nav>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
+  var sb = supabase.createClient(
+    'https://roiupddikqxcmukutits.supabase.co',
+    'sb_publishable_Yunh_uJp-LeJFLqByfHwaQ_2sgOV4BS'
+  );
+
   var fmt = function(n){
     n = Number(n)||0;
     return n.toLocaleString('es-MX', {style:'currency', currency:'MXN', minimumFractionDigits:2});
@@ -296,34 +323,56 @@
     return MESES[parseInt(parts[1],10)-1] + ' ' + parts[0];
   }
 
-  var state;
-  try{
-    var raw = JSON.parse(localStorage.getItem('mis-quincenas-v1'));
-    if(raw && raw.periods){
-      state = raw;
-    } else if(raw && raw.concepts){
-      var migratedKey = currentMonthKey();
-      state = { periods:{}, currentPeriod: migratedKey };
-      state.periods[migratedKey] = {
-        ingresos: raw.ingresos || {q1:0,q2:0},
-        tenemos: raw.tenemos||0,
-        ppngi: (raw.ppngi!=null ? raw.ppngi : null),
-        concepts: raw.concepts || []
-      };
-    } else {
-      throw new Error('sin datos previos');
-    }
-  }catch(e){
-    var freshKey = currentMonthKey();
-    state = { periods:{}, currentPeriod: freshKey };
-    state.periods[freshKey] = JSON.parse(JSON.stringify(defaultPeriod));
-  }
+  var state = { periods:{}, currentPeriod: currentMonthKey() };
 
   function periodKeys(){ return Object.keys(state.periods).sort(); }
   function period(){ return state.periods[state.currentPeriod]; }
 
-  function save(){
+  function saveLocal(){
     try{ localStorage.setItem('mis-quincenas-v1', JSON.stringify(state)); }catch(e){}
+  }
+
+  function loadLocalCache(){
+    try{
+      var raw = JSON.parse(localStorage.getItem('mis-quincenas-v1'));
+      if(raw && raw.periods) return raw.periods;
+      if(raw && raw.concepts){
+        var wrapped = {};
+        wrapped[currentMonthKey()] = {
+          ingresos: raw.ingresos || {q1:0,q2:0},
+          tenemos: raw.tenemos||0,
+          ppngi: (raw.ppngi!=null ? raw.ppngi : null),
+          concepts: raw.concepts || []
+        };
+        return wrapped;
+      }
+    }catch(e){}
+    return null;
+  }
+
+  async function syncPeriod(key){
+    var p = state.periods[key];
+    if(!p) return;
+    try{
+      var up = await sb.from('periods').upsert({
+        period_key: key,
+        ingresos_q1: p.ingresos.q1, ingresos_q2: p.ingresos.q2,
+        tenemos: p.tenemos, ppngi: p.ppngi
+      }, { onConflict: 'owner_id,period_key' }).select().single();
+      if(up.error || !up.data) return;
+      var periodId = up.data.id;
+      await sb.from('concepts').delete().eq('period_id', periodId);
+      if(p.concepts.length){
+        await sb.from('concepts').insert(p.concepts.map(function(c, i){
+          return { period_id:periodId, nombre:c.nombre, q1:c.q1, q2:c.q2, medio:c.medio, reserva:c.reserva, sort_order:i };
+        }));
+      }
+    }catch(e){ /* sin conexión: el cambio local ya quedó guardado, se reintenta en el próximo guardado */ }
+  }
+
+  function save(){
+    saveLocal();
+    syncPeriod(state.currentPeriod).catch(function(){});
   }
 
   function el(sel){ return document.querySelector(sel); }
@@ -482,7 +531,79 @@
     });
   });
 
-  renderAll();
+  async function loadFromSupabase(){
+    var res = await sb.from('periods').select('*, concepts(*)').order('period_key');
+    if(res.error) throw res.error;
+    var periods = {};
+    (res.data||[]).forEach(function(row){
+      var cs = (row.concepts||[]).slice().sort(function(a,b){ return (a.sort_order||0)-(b.sort_order||0); });
+      periods[row.period_key] = {
+        ingresos: { q1:Number(row.ingresos_q1)||0, q2:Number(row.ingresos_q2)||0 },
+        tenemos: Number(row.tenemos)||0,
+        ppngi: (row.ppngi===null || row.ppngi===undefined) ? null : Number(row.ppngi),
+        concepts: cs.map(function(c){
+          return { id:c.id, nombre:c.nombre, q1:Number(c.q1)||0, q2:Number(c.q2)||0, medio:c.medio, reserva:!!c.reserva };
+        })
+      };
+    });
+    return periods;
+  }
+
+  async function bootApp(){
+    var periods, isFreshAccount = false;
+    try{
+      periods = await loadFromSupabase();
+    }catch(e){
+      periods = loadLocalCache() || {};
+      if(!Object.keys(periods).length){ periods[currentMonthKey()] = JSON.parse(JSON.stringify(defaultPeriod)); }
+      state.periods = periods;
+      state.currentPeriod = periodKeys()[periodKeys().length-1];
+      renderAll();
+      return;
+    }
+    if(!Object.keys(periods).length){
+      var cached = loadLocalCache();
+      isFreshAccount = true;
+      if(cached && Object.keys(cached).length){ periods = cached; }
+      else{ periods[currentMonthKey()] = JSON.parse(JSON.stringify(defaultPeriod)); }
+    }
+    state.periods = periods;
+    var keys = Object.keys(periods).sort();
+    state.currentPeriod = keys[keys.length-1];
+    saveLocal();
+    renderAll();
+    if(isFreshAccount){ keys.forEach(function(k){ syncPeriod(k).catch(function(){}); }); }
+  }
+
+  function showApp(){ el('#gate').hidden = true; el('#app').hidden = false; }
+  function showGate(){ el('#app').hidden = true; el('#gate').hidden = false; }
+
+  function handleSession(session){
+    if(session){
+      el('#session-email').textContent = session.user.email;
+      showApp();
+      bootApp();
+    } else {
+      showGate();
+    }
+  }
+
+  el('#gate-send').addEventListener('click', async function(){
+    var email = el('#gate-email').value.trim();
+    if(!email) return;
+    el('#gate-send').disabled = true;
+    el('#gate-msg').textContent = 'Enviando...';
+    var res = await sb.auth.signInWithOtp({ email: email, options:{ emailRedirectTo: window.location.href } });
+    el('#gate-send').disabled = false;
+    el('#gate-msg').textContent = res.error ? ('Error: '+res.error.message) : 'Revisa tu correo y toca el link para entrar.';
+  });
+
+  el('#signout-btn').addEventListener('click', function(){
+    sb.auth.signOut().then(function(){ location.reload(); });
+  });
+
+  sb.auth.getSession().then(function(res){ handleSession(res.data && res.data.session); });
+  sb.auth.onAuthStateChange(function(_event, session){ handleSession(session); });
 })();
 </script>
 <script>
