@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mis Quincenas</title>
+<meta name="description" content="Finanzas personales quincenales: conceptos, resumen, pago sin intereses y cuánto mover a Nu.">
+<meta name="theme-color" content="#0E6B52">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Quincenas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap">
+<style>
+  :root{
+    --bg:#EFEDE6; --app-bg:#FBFAF7; --surface:#FFFFFF; --surface-2:#F3F1EA; --border:#E2DFD3;
+    --ink:#211F1A; --ink-dim:#726C5E; --accent:#0E6B52; --accent-soft:#DEEFE8; --accent-ink:#FFFFFF;
+    --good:#1E8A5F; --good-soft:#E1F3E9; --warn:#B8562B; --warn-soft:#FBE9DF;
+    --tdc:#5B4E9C; --tdc-soft:#EBE7F7; --nu:#7A2FB8; --nu-soft:#F2E7FA;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#15140F; --app-bg:#1B1A15; --surface:#221F19; --surface-2:#28251E; --border:#3A3627;
+      --ink:#F1EEE4; --ink-dim:#A7A08D; --accent:#4FBE96; --accent-soft:#1C3730; --accent-ink:#0B1512;
+      --good:#4FBE8B; --good-soft:#193226; --warn:#E08A57; --warn-soft:#3A2416;
+      --tdc:#B0A2F0; --tdc-soft:#26213D; --nu:#D19CF2; --nu-soft:#301F3D;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#15140F; --app-bg:#1B1A15; --surface:#221F19; --surface-2:#28251E; --border:#3A3627;
+    --ink:#F1EEE4; --ink-dim:#A7A08D; --accent:#4FBE96; --accent-soft:#1C3730; --accent-ink:#0B1512;
+    --good:#4FBE8B; --good-soft:#193226; --warn:#E08A57; --warn-soft:#3A2416;
+    --tdc:#B0A2F0; --tdc-soft:#26213D; --nu:#D19CF2; --nu-soft:#301F3D;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); margin:0; min-height:100vh;
+    font-family:"Lexend",-apple-system,Segoe UI,sans-serif;
+    display:flex; justify-content:center; align-items:flex-start;
+    padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));
+  }
+  .num{ font-variant-numeric:tabular-nums; }
+
+  .phone{
+    width:100%; max-width:420px; background:var(--app-bg); border:1px solid var(--border);
+    border-radius:28px; overflow:hidden; box-shadow:0 20px 50px -25px rgba(0,0,0,.35);
+    display:flex; flex-direction:column; min-height:640px;
+  }
+
+  .topbar{ padding:18px 20px 14px; background:var(--app-bg); }
+  .topbar h1{ margin:0; font-size:21px; font-weight:800; letter-spacing:-0.01em; }
+  .topbar .period{ font-size:12.5px; color:var(--ink-dim); margin-top:2px; }
+
+  .proto-note{
+    margin:0 20px 12px; background:var(--surface-2); border:1px dashed var(--border);
+    border-radius:10px; padding:9px 12px; font-size:11.5px; color:var(--ink-dim); line-height:1.5;
+  }
+
+  .content{ flex:1; padding:0 20px 16px; overflow-y:auto; }
+  .content h2{ font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-dim); margin:18px 0 8px; }
+  .content h2:first-child{ margin-top:2px; }
+
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; }
+  .card + .card{ margin-top:12px; }
+  .row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .row + .row{ margin-top:10px; }
+  .row .label{ font-size:13.5px; color:var(--ink-dim); }
+  .row .value{ font-size:14.5px; font-weight:600; }
+
+  .stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .stat{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 14px; }
+  .stat .k{ font-size:11px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.04em; }
+  .stat .v{ font-size:19px; font-weight:700; margin-top:3px; }
+  .stat.good .v{ color:var(--good); } .stat.warn .v{ color:var(--warn); }
+
+  input[type=number], input[type=text]{
+    font-family:inherit; background:var(--surface-2); border:1px solid var(--border); color:var(--ink);
+    border-radius:8px; padding:7px 9px; font-size:13.5px; width:100%;
+  }
+  input[type=number]{ text-align:right; font-variant-numeric:tabular-nums; }
+  input:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+  label.field{ display:block; font-size:11.5px; color:var(--ink-dim); margin-bottom:4px; }
+
+  table.ledger{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.ledger th{ text-align:right; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-dim); font-weight:600; padding-bottom:6px; }
+  table.ledger th:first-child, table.ledger td:first-child{ text-align:left; }
+  table.ledger td{ padding:7px 0; border-top:1px solid var(--border); text-align:right; }
+  table.ledger tr.total td{ font-weight:700; border-top:2px solid var(--ink-dim); }
+  .chip{ display:inline-block; font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:99px; }
+  .chip.tdc{ background:var(--tdc-soft); color:var(--tdc); }
+  .chip.efectivo{ background:var(--accent-soft); color:var(--accent); }
+
+  .concept-card{ display:flex; flex-direction:column; gap:8px; }
+  .concept-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .concept-head input[type=text]{ font-weight:600; font-size:14px; }
+  .del-btn{
+    flex:none; width:28px; height:28px; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface-2); color:var(--warn); font-size:15px; line-height:1; cursor:pointer;
+  }
+  .concept-amounts{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .concept-flags{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .flag-btn{
+    font-family:inherit; font-size:11.5px; font-weight:600; padding:6px 11px; border-radius:99px;
+    border:1px solid var(--border); background:var(--surface-2); color:var(--ink-dim); cursor:pointer;
+  }
+  .flag-btn[aria-pressed="true"].m-tdc{ background:var(--tdc-soft); color:var(--tdc); border-color:transparent; }
+  .flag-btn[aria-pressed="true"].m-efectivo{ background:var(--accent-soft); color:var(--accent); border-color:transparent; }
+  .flag-btn.reserva[aria-pressed="true"]{ background:var(--nu-soft); color:var(--nu); border-color:transparent; }
+
+  .add-btn{
+    width:100%; margin-top:12px; padding:12px; border-radius:14px; border:1.5px dashed var(--border);
+    background:transparent; color:var(--ink-dim); font-family:inherit; font-weight:600; font-size:13.5px; cursor:pointer;
+  }
+  .add-btn:hover{ border-color:var(--accent); color:var(--accent); }
+
+  .progress{ height:8px; border-radius:99px; background:var(--surface-2); overflow:hidden; margin:10px 0; }
+  .progress > div{ height:100%; background:var(--good); border-radius:99px; transition:width .2s; }
+  .helptext{ font-size:12px; color:var(--ink-dim); line-height:1.55; margin:0; }
+
+  .tabbar{
+    display:flex; border-top:1px solid var(--border); background:var(--app-bg);
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));
+  }
+  .tab{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 2px;
+    background:none; border:none; font-family:inherit; font-size:10.5px; font-weight:600;
+    color:var(--ink-dim); cursor:pointer; border-radius:10px;
+  }
+  .tab svg{ width:20px; height:20px; }
+  .tab[aria-current="true"]{ color:var(--accent); }
+  .tab[aria-current="true"] .dot{ opacity:1; } .tab .dot{ opacity:0; width:4px; height:4px; border-radius:50%; background:var(--accent); }
+
+  [hidden]{ display:none !important; }
+  @media (max-width:400px){ .phone{ border-radius:0; min-height:100vh; } body{ padding:0; } }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="topbar">
+    <h1>Mis Quincenas</h1>
+    <div class="period">Septiembre · edítalo todo, es tuyo</div>
+  </div>
+  <div class="proto-note">Prototipo con datos de ejemplo para probar el concepto — no son tus cifras reales. Lo que agregues se guarda solo en este navegador.</div>
+
+  <div class="content" id="view-resumen">
+    <h2>Ingresos de la quincena</h2>
+    <div class="card">
+      <div class="row">
+        <span class="label">1ra quincena</span>
+        <input type="number" id="in-q1" style="max-width:120px">
+      </div>
+      <div class="row">
+        <span class="label">2da quincena</span>
+        <input type="number" id="in-q2" style="max-width:120px">
+      </div>
+    </div>
+
+    <h2>Gastos por concepto</h2>
+    <div class="card">
+      <table class="ledger">
+        <thead><tr><th>Concepto</th><th>1ra Q</th><th>2da Q</th><th>Mensual</th></tr></thead>
+        <tbody id="resumen-rows"></tbody>
+        <tfoot><tr class="total"><td>Total gastos</td><td id="rt-q1" class="num"></td><td id="rt-q2" class="num"></td><td id="rt-m" class="num"></td></tr></tfoot>
+      </table>
+    </div>
+
+    <h2>Lo que sobra</h2>
+    <div class="stat-grid">
+      <div class="stat" id="stat-sq1"><div class="k">1ra quincena</div><div class="v num" id="v-sq1"></div></div>
+      <div class="stat" id="stat-sq2"><div class="k">2da quincena</div><div class="v num" id="v-sq2"></div></div>
+    </div>
+  </div>
+
+  <div class="content" id="view-conceptos" hidden>
+    <h2>Tus conceptos <span style="text-transform:none;letter-spacing:0;">— agrega, edita o borra</span></h2>
+    <div id="concept-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+    <button class="add-btn" id="add-concept">+ Agregar concepto</button>
+    <p class="helptext" style="margin-top:14px;">Marca <b>TDC</b> si el gasto se carga a la tarjeta (alimenta la pestaña Tarjeta) y <b>Reserva 1ra Q</b> si ese dinero ya está comprometido en cuanto cae la primera quincena (alimenta la pestaña Nu).</p>
+  </div>
+
+  <div class="content" id="view-tarjeta" hidden>
+    <h2>Cargos que reconoce de tus conceptos</h2>
+    <div class="card">
+      <table class="ledger">
+        <thead><tr><th>Cargo a la tarjeta</th><th>Mensual</th></tr></thead>
+        <tbody id="tdc-rows"></tbody>
+        <tfoot><tr class="total"><td>Suma de conceptos TDC</td><td id="ppngi-sugerido" class="num"></td></tr></tfoot>
+      </table>
+      <p class="helptext" style="margin-top:8px;">Esto es solo lo que capturaste en Conceptos — tu estado de cuenta real puede incluir más cosas.</p>
+    </div>
+    <h2>Pago para no generar intereses (PPNGI)</h2>
+    <div class="card">
+      <label class="field">Monto real de tu estado de cuenta</label>
+      <input type="number" id="in-ppngi">
+    </div>
+    <h2>Tu avance</h2>
+    <div class="card">
+      <label class="field">Ya llevas apartado</label>
+      <input type="number" id="in-tenemos" style="margin-bottom:4px;">
+      <div class="progress"><div id="bar-tdc" style="width:0%"></div></div>
+      <div class="row"><span class="label">Falta</span><span class="value num" id="v-falta"></span></div>
+      <div class="row"><span class="label">Por quincena (2)</span><span class="value num" id="v-porq"></span></div>
+    </div>
+  </div>
+
+  <div class="content" id="view-nu" hidden>
+    <h2>¿Cuánto muevo a Nu?</h2>
+    <p class="helptext">Estos conceptos (marcados <b>Reserva 1ra Q</b> en Conceptos) ya te llegaron con tu 1ra quincena, pero se pagan hasta fin de mes — mientras tanto, ese dinero puede estar rindiendo en Nu en vez de quieto en tu cuenta de siempre:</p>
+    <div class="card">
+      <table class="ledger">
+        <thead><tr><th>Concepto</th><th>1ra Q</th></tr></thead>
+        <tbody id="nu-rows"></tbody>
+        <tfoot><tr class="total"><td>Puedes mover a Nu</td><td id="nu-total" class="num"></td></tr></tfoot>
+      </table>
+    </div>
+    <h2>De un vistazo</h2>
+    <div class="stat-grid">
+      <div class="stat"><div class="k">Ingreso 1ra Q</div><div class="v num" id="nu-ingreso"></div></div>
+      <div class="stat good"><div class="k">Puedes mover a Nu</div><div class="v num" id="nu-disponible"></div></div>
+    </div>
+    <p class="helptext" style="margin-top:12px;">Esta cifra sale directo de sumar lo marcado como "Reserva 1ra Q" en Conceptos — no se resta de tu ingreso, porque ese dinero de todas formas ya lo tenías apartado para pagarse a fin de mes.</p>
+  </div>
+
+  <nav class="tabbar">
+    <button class="tab" data-view="resumen" aria-current="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2 4 4 8-8 4 4"/></svg>
+      Resumen<span class="dot"></span>
+    </button>
+    <button class="tab" data-view="conceptos" aria-current="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      Conceptos<span class="dot"></span>
+    </button>
+    <button class="tab" data-view="tarjeta" aria-current="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg>
+      Tarjeta<span class="dot"></span>
+    </button>
+    <button class="tab" data-view="nu" aria-current="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M6 8c0-3 3-4 6-4s6 1 6 4-3 4-6 4-6 1-6 4 3 4 6 4 6-1 6-4"/></svg>
+      Nu<span class="dot"></span>
+    </button>
+  </nav>
+</div>
+
+<script>
+(function(){
+  var fmt = function(n){
+    n = Number(n)||0;
+    return n.toLocaleString('es-MX', {style:'currency', currency:'MXN', minimumFractionDigits:2});
+  };
+  var uid = function(){ return 'c' + Math.random().toString(36).slice(2,9); };
+
+  var defaultState = {
+    ingresos: { q1: 16500, q2: 16000 },
+    tenemos: 2800,
+    ppngi: null,
+    concepts: [
+      { id: uid(), nombre:'Renta',    q1:2500, q2:2500, medio:'efectivo', reserva:true },
+      { id: uid(), nombre:'Internet', q1:400,  q2:400,  medio:'tdc',      reserva:true },
+      { id: uid(), nombre:'Netflix',  q1:200,  q2:200,  medio:'tdc',      reserva:true },
+      { id: uid(), nombre:'Gasolina', q1:1500, q2:1500, medio:'tdc',      reserva:false },
+      { id: uid(), nombre:'Ahorro',   q1:3000, q2:3000, medio:'efectivo', reserva:true }
+    ]
+  };
+
+  var state = null;
+  try{
+    var saved = localStorage.getItem('mis-quincenas-v1');
+    state = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultState));
+  }catch(e){ state = JSON.parse(JSON.stringify(defaultState)); }
+
+  function save(){
+    try{ localStorage.setItem('mis-quincenas-v1', JSON.stringify(state)); }catch(e){}
+  }
+
+  function el(sel){ return document.querySelector(sel); }
+  function ce(tag, cls){ var e=document.createElement(tag); if(cls) e.className=cls; return e; }
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function renderResumen(){
+    var body = el('#resumen-rows'); body.innerHTML='';
+    var tq1=0, tq2=0;
+    state.concepts.forEach(function(c){
+      tq1+=Number(c.q1)||0; tq2+=Number(c.q2)||0;
+      var tr=ce('tr');
+      tr.innerHTML = '<td>'+esc(c.nombre)+'</td><td class="num">'+fmt(c.q1)+'</td><td class="num">'+fmt(c.q2)+'</td><td class="num">'+fmt((Number(c.q1)||0)+(Number(c.q2)||0))+'</td>';
+      body.appendChild(tr);
+    });
+    el('#rt-q1').textContent = fmt(tq1);
+    el('#rt-q2').textContent = fmt(tq2);
+    el('#rt-m').textContent = fmt(tq1+tq2);
+    el('#in-q1').value = state.ingresos.q1;
+    el('#in-q2').value = state.ingresos.q2;
+    var sq1 = (Number(state.ingresos.q1)||0) - tq1;
+    var sq2 = (Number(state.ingresos.q2)||0) - tq2;
+    el('#v-sq1').textContent = fmt(sq1);
+    el('#v-sq2').textContent = fmt(sq2);
+    el('#stat-sq1').className = 'stat ' + (sq1<0?'warn':'good');
+    el('#stat-sq2').className = 'stat ' + (sq2<0?'warn':'good');
+  }
+
+  function renderConceptos(){
+    var list = el('#concept-list'); list.innerHTML='';
+    state.concepts.forEach(function(c){
+      var card = ce('div','card concept-card');
+      card.innerHTML =
+        '<div class="concept-head">'+
+          '<input type="text" data-f="nombre" value="'+esc(c.nombre)+'">'+
+          '<button class="del-btn" title="Borrar">✕</button>'+
+        '</div>'+
+        '<div class="concept-amounts">'+
+          '<div><label class="field">1ra quincena</label><input type="number" data-f="q1" value="'+c.q1+'"></div>'+
+          '<div><label class="field">2da quincena</label><input type="number" data-f="q2" value="'+c.q2+'"></div>'+
+        '</div>'+
+        '<div class="concept-flags">'+
+          '<button class="flag-btn m-efectivo" data-f="medio-efectivo" aria-pressed="'+(c.medio==='efectivo')+'">Efectivo</button>'+
+          '<button class="flag-btn m-tdc" data-f="medio-tdc" aria-pressed="'+(c.medio==='tdc')+'">TDC</button>'+
+          '<button class="flag-btn reserva" data-f="reserva" aria-pressed="'+(!!c.reserva)+'">Reserva 1ra Q</button>'+
+        '</div>';
+      card.querySelector('[data-f=nombre]').addEventListener('input', function(e){ c.nombre=e.target.value; save(); });
+      card.querySelector('[data-f=q1]').addEventListener('input', function(e){ c.q1=Number(e.target.value)||0; save(); renderAll(); });
+      card.querySelector('[data-f=q2]').addEventListener('input', function(e){ c.q2=Number(e.target.value)||0; save(); renderAll(); });
+      card.querySelector('[data-f=medio-efectivo]').addEventListener('click', function(){ c.medio='efectivo'; save(); renderAll(); });
+      card.querySelector('[data-f=medio-tdc]').addEventListener('click', function(){ c.medio='tdc'; save(); renderAll(); });
+      card.querySelector('[data-f=reserva]').addEventListener('click', function(){ c.reserva=!c.reserva; save(); renderAll(); });
+      card.querySelector('.del-btn').addEventListener('click', function(){
+        state.concepts = state.concepts.filter(function(x){ return x.id!==c.id; });
+        save(); renderAll();
+      });
+      list.appendChild(card);
+    });
+  }
+
+  function renderTarjeta(){
+    var body = el('#tdc-rows'); body.innerHTML='';
+    var sugerido=0;
+    state.concepts.filter(function(c){ return c.medio==='tdc'; }).forEach(function(c){
+      var m = (Number(c.q1)||0)+(Number(c.q2)||0);
+      sugerido += m;
+      var tr = ce('tr'); tr.innerHTML = '<td>'+esc(c.nombre)+'</td><td class="num">'+fmt(m)+'</td>';
+      body.appendChild(tr);
+    });
+    el('#ppngi-sugerido').textContent = fmt(sugerido);
+    if(state.ppngi === null || state.ppngi === undefined){ state.ppngi = sugerido; }
+    el('#in-ppngi').value = state.ppngi;
+    el('#in-tenemos').value = state.tenemos;
+    var ppngi = Number(state.ppngi)||0;
+    var falta = Math.max(0, ppngi - (Number(state.tenemos)||0));
+    var pct = ppngi>0 ? Math.min(100, Math.round(100*(Number(state.tenemos)||0)/ppngi)) : 0;
+    el('#bar-tdc').style.width = pct+'%';
+    el('#v-falta').textContent = fmt(falta);
+    el('#v-porq').textContent = fmt(falta/2);
+  }
+
+  function renderNu(){
+    var body = el('#nu-rows'); body.innerHTML='';
+    var total=0;
+    state.concepts.filter(function(c){ return c.reserva; }).forEach(function(c){
+      total += Number(c.q1)||0;
+      var tr = ce('tr'); tr.innerHTML = '<td>'+esc(c.nombre)+'</td><td class="num">'+fmt(c.q1)+'</td>';
+      body.appendChild(tr);
+    });
+    el('#nu-total').textContent = fmt(total);
+    el('#nu-ingreso').textContent = fmt(state.ingresos.q1);
+    el('#nu-disponible').textContent = fmt(total);
+  }
+
+  function renderAll(){ renderResumen(); renderConceptos(); renderTarjeta(); renderNu(); }
+
+  el('#in-q1').addEventListener('input', function(e){ state.ingresos.q1=Number(e.target.value)||0; save(); renderAll(); });
+  el('#in-q2').addEventListener('input', function(e){ state.ingresos.q2=Number(e.target.value)||0; save(); renderAll(); });
+  el('#in-tenemos').addEventListener('input', function(e){ state.tenemos=Number(e.target.value)||0; save(); renderAll(); });
+  el('#in-ppngi').addEventListener('input', function(e){ state.ppngi=Number(e.target.value)||0; save(); renderAll(); });
+  el('#add-concept').addEventListener('click', function(){
+    state.concepts.push({ id:uid(), nombre:'Nuevo concepto', q1:0, q2:0, medio:'efectivo', reserva:false });
+    save(); renderAll();
+  });
+
+  document.querySelectorAll('.tab').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.tab').forEach(function(b){ b.setAttribute('aria-current','false'); });
+      btn.setAttribute('aria-current','true');
+      ['resumen','conceptos','tarjeta','nu'].forEach(function(v){
+        document.getElementById('view-'+v).hidden = (v !== btn.getAttribute('data-view'));
+      });
+    });
+  });
+
+  renderAll();
+})();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(){});
+    });
+  }
+</script>
+</body>
+</html>
