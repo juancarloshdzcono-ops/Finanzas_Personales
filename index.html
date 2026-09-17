@@ -283,6 +283,14 @@
       <input type="email" id="gate-email" placeholder="tu@correo.com" style="margin-bottom:10px;">
       <button class="btn-solid" id="gate-send">Enviarme el link</button>
       <p class="helptext" id="gate-msg" style="margin-top:10px;">Sin contraseña — te mandamos un link para entrar.</p>
+
+      <div style="text-align:center; margin:16px 0 10px; position:relative;">
+        <hr style="border:none; border-top:1px solid var(--border); margin:0;">
+        <span style="position:relative; top:-9px; background:var(--surface); padding:0 8px; font-size:11px; font-weight:600; color:var(--ink-dim);">O entra directo</span>
+      </div>
+      <button class="add-btn" id="gate-bypass" style="margin-top:0; border-style:solid; border-color:var(--border); padding:10px; font-size:13px;">
+        📱 Usar en este celular (Modo Local)
+      </button>
     </div>
   </div>
 </div>
@@ -929,11 +937,25 @@
       el('#session-email').textContent = session.user.email;
       showApp();
       bootApp();
+    } else if (localStorage.getItem('local_bypass') === 'true') {
+      el('#session-email').textContent = '📱 Celular (Modo Local)';
+      showApp();
+      bootApp();
     } else {
       var err = urlErrorDescription();
       if(err){ el('#gate-msg').textContent = 'El link falló: ' + err; }
       showGate();
     }
+  }
+
+  var bypassBtn = el('#gate-bypass');
+  if(bypassBtn){
+    bypassBtn.addEventListener('click', function(){
+      try{ localStorage.setItem('local_bypass', 'true'); }catch(e){}
+      el('#session-email').textContent = '📱 Celular (Modo Local)';
+      showApp();
+      bootApp();
+    });
   }
 
   el('#gate-send').addEventListener('click', async function(){
@@ -948,6 +970,7 @@
   });
 
   el('#signout-btn').addEventListener('click', function(){
+    try{ localStorage.removeItem('local_bypass'); }catch(e){}
     sb.auth.signOut().then(function(){ location.reload(); });
   });
 
