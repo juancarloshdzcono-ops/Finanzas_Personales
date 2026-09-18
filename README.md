@@ -5,31 +5,63 @@ de gastos por una app que se pueda ver y operar desde el celular.
 
 ## Estado
 
-Prototipo funcional como PWA (Progressive Web App): app de una sola página
-(`index.html`), instalable en Android/iOS vía "Agregar a inicio" del navegador, con
-`manifest.json` y un service worker (`sw.js`) para funcionar offline. Todo el estado se
-guarda hoy en `localStorage` del navegador — sin backend ni sincronización entre
-dispositivos todavía.
+App React + TypeScript + Tailwind CSS, empaquetada con Vite como PWA (Progressive Web App)
+instalable en Android/iOS vía "Agregar a inicio". El estado vive en Supabase (tablas
+`periods`/`concepts` con RLS por usuario, acceso por magic link de correo) con `localStorage`
+como caché local para apertura instantánea y resiliencia offline. También hay un "Modo Local"
+sin cuenta que usa solo `localStorage`.
 
 ## Modelo de datos
 
-Un concepto tiene: nombre, monto en 1ra y 2da quincena, medio de pago (efectivo/TDC) y si
-se debe "Reservar para Nu" (dinero que llega en la 1ra quincena pero se paga hasta fin de
-mes, candidato a mover a una cuenta con rendimiento mientras tanto). Tres vistas —Resumen,
-Tarjeta (pago para no generar intereses) y Nu— se calculan a partir de esa misma lista de
-conceptos, no de tablas separadas.
+Un concepto tiene: nombre, monto en 1ra y 2da quincena, medio de pago (efectivo/TDC) y un
+estado del dinero (Retirar / En Nu / Pagado). Los conceptos viven agrupados por periodo
+mensual (`YYYY-MM`). Tres vistas —Resumen, Tarjeta (pago para no generar intereses) y Nu— se
+calculan a partir de esa misma lista de conceptos, no de tablas separadas.
 
-## Probar localmente
+## Desarrollo
 
 ```bash
-python -m http.server 5500
+npm install
+npm run dev
 ```
 
-y abre `http://localhost:5500`.
+Variables de entorno necesarias (ver `.env.example`): `VITE_SUPABASE_URL` y
+`VITE_SUPABASE_ANON_KEY`.
+
+## Build y preview de la PWA
+
+El service worker y el manifest sólo se generan en el build de producción:
+
+```bash
+npm run build
+npm run preview
+```
+
+## Despliegue
+
+`.github/workflows/deploy.yml` compila con `npm run build` y publica `dist/` a GitHub Pages
+en cada push a `master` (vía `actions/deploy-pages`, sin rama `gh-pages`). Para que funcione:
+
+1. En **Settings → Pages → Build and deployment → Source**, cambiar a **GitHub Actions**
+   (hoy el repo sirve directo desde la raíz de `master`; si no se cambia esto antes de un
+   push, Pages seguiría publicando el código fuente de Vite sin compilar).
+2. En **Settings → Secrets and variables → Actions**, crear `VITE_SUPABASE_URL` y
+   `VITE_SUPABASE_ANON_KEY` (mismos valores que `.env` local) — el build los necesita
+   inyectados para que la app compilada no truene al cargar.
+
+## Arquitectura
+
+- `src/state/FinanzasContext.tsx` — estado global (reducer) de periodos/conceptos y las
+  acciones que los mutan.
+- `src/state/persistence.ts` — carga/guardado en Supabase y caché en `localStorage`.
+- `src/components/views/` — las 4 pestañas (Resumen, Conceptos, Tarjeta, Nu).
+- `src/components/ui/` — piezas reutilizables (Card, StatusPill, campos de formulario, etc).
+- `src/hooks/useAuth.ts` — sesión de Supabase + Modo Local.
+
+`vite.config.ts` fija `base: '/Finanzas_Personales/'` para que el build sirva bien desde
+GitHub Pages en ese subpath — si el proyecto cambia de repo o dominio, actualízalo ahí.
 
 ## Contexto completo
 
-El origen, las capturas del Excel real, las decisiones de diseño y los pendientes de
-arquitectura (dónde vive el dato de verdad, sincronización entre dispositivos) están en la
-bóveda compartida: `_Memoria-compartida/Laboratorio-Finanzas-Personales.md` dentro de
-`C:\Users\juanc\Developer`.
+El origen, las decisiones de diseño y los pendientes están en la bóveda compartida:
+`_Memoria-compartida/Laboratorio-Finanzas-Personales.md` dentro de `C:\Users\juanc\Developer`.

@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Lexend", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  --color-bg: var(--bg);
+  --color-app-bg: var(--app-bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-ink: var(--ink);
+  --color-ink-dim: var(--ink-dim);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-tdc: var(--tdc);
+  --color-tdc-soft: var(--tdc-soft);
+  --color-nu: var(--nu);
+  --color-nu-soft: var(--nu-soft);
+
+  --color-status-nu-bg: var(--status-nu-bg);
+  --color-status-nu-border: var(--status-nu-border);
+  --color-status-nu-text: var(--status-nu-text);
+  --color-status-pagado-bg: var(--status-pagado-bg);
+  --color-status-pagado-border: var(--status-pagado-border);
+  --color-status-pagado-text: var(--status-pagado-text);
+  --color-status-libre-bg: var(--status-libre-bg);
+  --color-status-libre-border: var(--status-libre-border);
+  --color-status-libre-text: var(--status-libre-text);
+}
+
+:root {
+  --bg:#0A0D14; --app-bg:#101524; --surface:#181F33; --surface-2:#222B45; --border:#2D3858;
+  --ink:#F8FAFC; --ink-dim:#94A3B8; --accent:#820AD1; --accent-soft:#291147; --accent-ink:#FFFFFF;
+  --good:#10B981; --good-soft:rgba(16,185,129,0.15); --warn:#EF4444; --warn-soft:rgba(239,68,68,0.15);
+  --tdc:#8B5CF6; --tdc-soft:rgba(139,92,246,0.15); --nu:#F59E0B; --nu-soft:rgba(245,158,11,0.15);
+
+  --status-nu-bg: rgba(245, 158, 11, 0.16);
+  --status-nu-border: rgba(245, 158, 11, 0.45);
+  --status-nu-text: #FBBF24;
+
+  --status-pagado-bg: rgba(16, 185, 129, 0.16);
+  --status-pagado-border: rgba(16, 185, 129, 0.45);
+  --status-pagado-text: #34D399;
+
+  --status-libre-bg: rgba(255, 255, 255, 0.04);
+  --status-libre-border: var(--border);
+  --status-libre-text: var(--ink-dim);
+
+  --gloss: linear-gradient(135deg, #820AD1 0%, #4F46E5 100%);
+  --card-shadow: 0 12px 30px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+:root[data-theme="light"] {
+  --bg:#EEF2F6; --app-bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#F1F5F9; --border:#E2E8F0;
+  --ink:#0F172A; --ink-dim:#64748B; --accent:#820AD1; --accent-soft:#F5E8FF; --accent-ink:#FFFFFF;
+  --good:#059669; --good-soft:#D1FAE5; --warn:#DC2626; --warn-soft:#FEE2E2;
+  --tdc:#7C3AED; --tdc-soft:#EDE9FE; --nu:#D97706; --nu-soft:#FEF3C7;
+
+  --status-nu-bg: #FEF3C7;
+  --status-nu-border: #FCD34D;
+  --status-nu-text: #B45309;
+
+  --status-pagado-bg: #D1FAE5;
+  --status-pagado-border: #6EE7B7;
+  --status-pagado-text: #047857;
+
+  --status-libre-bg: #F8FAFC;
+  --status-libre-border: #CBD5E1;
+  --status-libre-text: #64748B;
+
+  --gloss: linear-gradient(135deg, #820AD1 0%, #6366F1 100%);
+  --card-shadow: 0 10px 25px -5px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1);
+}
+
+* { -webkit-tap-highlight-color: transparent; }
+
+html, body { background: var(--bg); }
+
+body {
+  color: var(--ink);
+  min-height: 100vh;
+  margin: 0;
+  font-family: var(--font-sans);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 16px 12px calc(24px + env(safe-area-inset-bottom, 0px));
+  transition: background-color .3s ease;
+}
+@media (max-width: 440px) {
+  body { padding: 0; }
+}
+
+/* #root no debe romper el centrado flex que aplica `body` al shell de la app/AuthGate. */
+#root { display: contents; }
+
+.num { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+@layer components {
+  .card {
+    @apply rounded-[18px] border border-border bg-surface p-4;
+    box-shadow: var(--card-shadow);
+  }
+  .section-title {
+    @apply mb-2.5 mt-[18px] flex items-center gap-1.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-dim first:mt-1;
+  }
+}
+
+@layer utilities {
+  .bg-gloss { background: var(--gloss); }
+  .text-gloss {
+    background: var(--gloss);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
