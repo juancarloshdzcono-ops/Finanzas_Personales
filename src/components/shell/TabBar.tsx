@@ -9,7 +9,7 @@ const TABS: { key: ViewKey; label: string; path: string }[] = [
 
 export function TabBar({ active, onChange }: { active: ViewKey; onChange: (v: ViewKey) => void }) {
   return (
-    <nav className="flex border-t border-border bg-app-bg px-1.5 pb-[calc(10px+env(safe-area-inset-bottom,0px))] pt-2">
+    <nav className="flex flex-shrink-0 border-t border-border bg-app-bg px-1.5 pb-[calc(10px+env(safe-area-inset-bottom,0px))] pt-2">
       {TABS.map((tab) => {
         const isActive = tab.key === active;
         return (

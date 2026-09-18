@@ -104,6 +104,8 @@ interface FinanzasContextValue {
   goNextPeriod: () => void;
   isNextPeriodNew: boolean;
   importCSV: (text: string) => { importedKeys: string[]; errors: string[] };
+  exportJSON: () => string;
+  importJSON: (text: string) => boolean;
 }
 
 const FinanzasContext = createContext<FinanzasContextValue | null>(null);
@@ -173,6 +175,19 @@ export function FinanzasProvider({ children }: { children: ReactNode }) {
         const importedKeys = Object.keys(touched);
         if (importedKeys.length) dispatch({ type: 'IMPORT_CSV', touched });
         return { importedKeys, errors };
+      },
+      exportJSON: () => JSON.stringify(state.periods, null, 2),
+      importJSON: (text: string) => {
+        try {
+          const parsed = JSON.parse(text);
+          if (!parsed || typeof parsed !== 'object') return false;
+          const keys = periodKeys(parsed);
+          if (!keys.length) return false;
+          dispatch({ type: 'LOAD', periods: parsed, currentPeriod: keys[keys.length - 1] });
+          return true;
+        } catch {
+          return false;
+        }
       },
     };
   }, [state, ready]);

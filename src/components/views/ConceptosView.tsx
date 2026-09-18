@@ -5,7 +5,7 @@ import { AddButton } from '../ui/Buttons';
 import { TEMPLATE_CSV } from '../../lib/csv';
 
 export function ConceptosView() {
-  const { period, addConcept, importCSV } = useFinanzas();
+  const { period, addConcept, importCSV, exportJSON, importJSON } = useFinanzas();
   const fileRef = useRef<HTMLInputElement>(null);
 
   function handleFile(e: ChangeEvent<HTMLInputElement>) {
@@ -37,6 +37,42 @@ export function ConceptosView() {
       <AddButton onClick={addConcept}>+ Agregar concepto</AddButton>
       <p className="mt-3.5 text-xs leading-relaxed text-ink-dim">
         Marca <b>TDC</b> si el gasto se carga a la tarjeta (alimenta la pestaña Tarjeta) y <b>Reserva 1ra Q</b> si ese dinero ya está comprometido en cuanto cae la primera quincena (alimenta la pestaña Nu).
+      </p>
+
+      <h2 className="section-title mt-[22px]">Copia de respaldo y sincronización rápida</h2>
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={() => {
+            const data = exportJSON();
+            navigator.clipboard.writeText(data).then(
+              () => alert('¡Copia de respaldo copiada al portapapeles! Puedes pegarla en tu celular o guardarla.'),
+              () => {
+                prompt('Copia este texto para respaldar tus conceptos:', data);
+              },
+            );
+          }}
+          className="w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-xs font-bold text-ink transition-all active:scale-[0.98]"
+        >
+          📋 Copiar respaldo de datos al portapapeles
+        </button>
+        <button
+          onClick={() => {
+            const text = prompt('Pega aquí el texto de respaldo JSON:');
+            if (!text) return;
+            const ok = importJSON(text);
+            if (ok) {
+              alert('¡Conceptos y periodos restaurados correctamente!');
+            } else {
+              alert('El texto no tiene un formato válido de respaldo.');
+            }
+          }}
+          className="w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-xs font-bold text-ink-dim transition-all active:scale-[0.98]"
+        >
+          📥 Restaurar respaldo desde texto
+        </button>
+      </div>
+      <p className="mt-2 text-xs leading-relaxed text-ink-dim">
+        Úsalo para transferir tus conceptos de tu computadora al celular al instante en Modo Local sin necesidad de iniciar sesión.
       </p>
 
       <h2 className="section-title mt-[22px]">Importar meses desde CSV</h2>

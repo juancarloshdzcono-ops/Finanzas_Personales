@@ -92,7 +92,11 @@ body {
   transition: background-color .3s ease;
 }
 @media (max-width: 440px) {
-  body { padding: 0; }
+  body {
+    padding: 0;
+    height: 100dvh;
+    overflow: hidden;
+  }
 }
 
 /* #root no debe romper el centrado flex que aplica `body` al shell de la app/AuthGate. */

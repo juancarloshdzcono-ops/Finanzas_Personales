@@ -56,51 +56,54 @@ export function ResumenView({ auth }: { auth: AuthState }) {
       <h2 className="section-title">
         Gastos por concepto <span className="normal-case tracking-normal text-ink-dim">(toca el botón para cambiar estado)</span>
       </h2>
-      <Card className="!p-2.5">
-        <table className="w-full border-collapse text-[12.5px]">
-          <thead>
-            <tr>
-              <th className="pb-2 text-left text-[10.5px] font-bold uppercase tracking-wide text-ink-dim">Concepto</th>
-              <th className="pb-2 text-right text-[10.5px] font-bold uppercase tracking-wide text-ink-dim">Estado</th>
-              <th className="pb-2 text-right text-[10.5px] font-bold uppercase tracking-wide text-ink-dim">1ra Q</th>
-              <th className="pb-2 text-right text-[10.5px] font-bold uppercase tracking-wide text-ink-dim">2da Q</th>
-              <th className="pb-2 text-right text-[10.5px] font-bold uppercase tracking-wide text-ink-dim">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {period.concepts.map((c) => {
-              const st = getStatus(c);
-              return (
-                <tr key={c.id} className="border-t border-border">
-                  <td className="py-2.5 pr-1 text-left">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[13.5px] font-semibold text-ink">{c.nombre}</span>
-                      <div className="flex items-center gap-1">
-                        <Chip tone={c.medio === 'tdc' ? 'tdc' : 'efectivo'}>{c.medio === 'tdc' ? 'TDC' : 'Efectivo'}</Chip>
-                        {c.reserva && <Chip tone="reserva">Reserva</Chip>}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-2.5 text-center">
+      <Card className="!p-3">
+        <div className="divide-y divide-border/60">
+          {period.concepts.map((c) => {
+            const st = getStatus(c);
+            return (
+              <div key={c.id} className="py-2.5 first:pt-0 last:pb-0 flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                    <span className="text-[14px] font-bold text-ink truncate">{c.nombre}</span>
+                    <Chip tone={c.medio === 'tdc' ? 'tdc' : 'efectivo'}>{c.medio === 'tdc' ? 'TDC' : 'Efectivo'}</Chip>
+                    {c.reserva && <Chip tone="reserva">Reserva</Chip>}
+                  </div>
+                  <div className="flex-shrink-0">
                     <StatusPill status={st} onClick={() => setConceptStatus(c.id, nextStatus(st))} />
-                  </td>
-                  <td className="num py-2.5 text-right">{fmt(c.q1)}</td>
-                  <td className="num py-2.5 text-right">{fmt(c.q2)}</td>
-                  <td className="num py-2.5 text-right font-bold">{fmt(c.q1 + c.q2)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-          <tfoot>
-            <tr className="border-t-2 border-border">
-              <td className="pt-2.5 text-left text-[13.5px] font-extrabold">Total gastos</td>
-              <td />
-              <td className="num pt-2.5 text-right text-[13.5px] font-extrabold">{fmt(tq1)}</td>
-              <td className="num pt-2.5 text-right text-[13.5px] font-extrabold">{fmt(tq2)}</td>
-              <td className="num pt-2.5 text-right text-[13.5px] font-extrabold">{fmt(tq1 + tq2)}</td>
-            </tr>
-          </tfoot>
-        </table>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between rounded-lg bg-surface-2/60 px-2.5 py-1.5 text-xs text-ink-dim">
+                  <div className="flex items-center gap-3">
+                    <span>1ra Q: <strong className="num font-semibold text-ink">{fmt(c.q1)}</strong></span>
+                    <span className="text-border">|</span>
+                    <span>2da Q: <strong className="num font-semibold text-ink">{fmt(c.q2)}</strong></span>
+                  </div>
+                  <div className="text-right">
+                    <span className="mr-1 text-[11px] text-ink-dim">Total:</span>
+                    <span className="num font-extrabold text-ink text-[13.5px]">{fmt(c.q1 + c.q2)}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Resumen de totales claramente desglosado */}
+        <div className="mt-3 pt-3 border-t-2 border-border flex flex-col gap-1.5 bg-surface-2/30 rounded-xl p-2.5">
+          <div className="flex items-center justify-between text-[12.5px] text-ink-dim">
+            <span>Total 1ra quincena:</span>
+            <span className="num font-bold text-ink">{fmt(tq1)}</span>
+          </div>
+          <div className="flex items-center justify-between text-[12.5px] text-ink-dim">
+            <span>Total 2da quincena:</span>
+            <span className="num font-bold text-ink">{fmt(tq2)}</span>
+          </div>
+          <div className="flex items-center justify-between text-[14px] font-extrabold text-ink pt-1.5 border-t border-border/60">
+            <span>Total gastos mensual:</span>
+            <span className="num text-accent-ink font-black text-[16px]">{fmt(tq1 + tq2)}</span>
+          </div>
+        </div>
       </Card>
 
       <h2 className="section-title">Lo que sobra</h2>
@@ -109,10 +112,17 @@ export function ResumenView({ auth }: { auth: AuthState }) {
         <Stat label="2da quincena" value={fmt(sq2)} tone={sq2 < 0 ? 'warn' : 'good'} />
       </div>
 
-      <p className="mt-4 flex items-center justify-between gap-2 text-xs text-ink-dim">
-        <span>{auth.email}</span>
-        <button onClick={auth.signOut} className="font-semibold text-warn">Cerrar sesión</button>
-      </p>
+      <div className="mt-4 flex flex-col gap-1.5 text-xs text-ink-dim">
+        <div className="flex items-center justify-between gap-2">
+          <span>{auth.email}</span>
+          <button onClick={auth.signOut} className="font-semibold text-warn">Cerrar sesión</button>
+        </div>
+        {auth.status === 'bypass' && (
+          <p className="text-[11px] text-ink-dim/70 text-center">
+            Modo Local activo. Los datos se guardan en este dispositivo.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

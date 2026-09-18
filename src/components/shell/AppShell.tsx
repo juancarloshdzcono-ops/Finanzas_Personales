@@ -17,10 +17,10 @@ export function AppShell({ auth }: { auth: AuthState }) {
   } = useRegisterSW();
 
   return (
-    <div className="flex min-h-[680px] w-full max-w-[440px] flex-col overflow-hidden rounded-[28px] border border-border bg-app-bg shadow-[var(--card-shadow)] max-[440px]:min-h-screen max-[440px]:rounded-none max-[440px]:border-none">
+    <div className="flex h-[100dvh] max-h-[100dvh] w-full max-w-[440px] flex-col overflow-hidden rounded-[28px] border border-border bg-app-bg shadow-[var(--card-shadow)] max-[440px]:rounded-none max-[440px]:border-none">
       <TopBar />
       {needRefresh && <UpdateToast onClick={() => updateServiceWorker(true)} />}
-      <div className="flex-1 overflow-y-auto px-[18px] pb-5 pt-3">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-[18px] pb-6 pt-3">
         {view === 'resumen' && <ResumenView auth={auth} />}
         {view === 'conceptos' && <ConceptosView />}
         {view === 'tarjeta' && <TarjetaView />}
